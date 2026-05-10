@@ -6,6 +6,12 @@ from pathlib import Path
 
 
 def write_algorithm_match_review(run: Path | str, candidates: list[dict], queries: list[str]) -> Path:
+    """Write legacy algorithm match review (debug-only).
+
+    The default workflow does not write numbered checkpoint files.
+    Algorithm match results are summarized in conversation and in plan.md.
+    This function is retained for debug/legacy use only.
+    """
     run = Path(run)
     checkpoint_dir = run / "checkpoints"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)

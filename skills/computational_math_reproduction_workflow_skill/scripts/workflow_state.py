@@ -1,3 +1,9 @@
+"""Workflow state helper (legacy/debug-only).
+
+The default workflow does not require workflow_state.json.
+This module is retained for resume scenarios only.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -10,8 +16,8 @@ from skills.human_review_skill.scripts.approval_logger import log_approval
 
 DEFAULT_STAGE = "task_understanding"
 SCHEMA_VERSION = "0.2"
-DEFAULT_PROMPT = "Review the task understanding checkpoint and reply approve / revise / reject / skip."
-DEFAULT_NEXT_ACTION = "Create task understanding checkpoint and ask for approve / revise / reject / skip."
+DEFAULT_PROMPT = "Review the plan and reply approve / revise / reject / skip."
+DEFAULT_NEXT_ACTION = "Write plan.md and ask for approve / revise / reject / skip."
 
 
 def _state_path(run: Path | str) -> Path:
@@ -43,7 +49,7 @@ def create_or_load_state(
         "pending_checkpoint": "task_understanding",
         "pending_user_decision": True,
         "blocked_actions": [],
-        "allowed_next_actions": ["write_task_understanding_checkpoint"],
+        "allowed_next_actions": ["write_plan_md"],
         "evidence_artifacts": [],
         "next_action_for_agent": DEFAULT_NEXT_ACTION,
         "next_action_for_codex": DEFAULT_NEXT_ACTION,
@@ -84,7 +90,7 @@ def apply_user_decision(
     log_approval(run, checkpoint, decision, reason, operator)
 
     if decision == "approve":
-        next_action = f"Proceed after approved {checkpoint} checkpoint."
+        next_action = f"Proceed after approved {checkpoint}."
         approved = list(state.get("approved_checkpoints", []))
         if checkpoint not in approved:
             approved.append(checkpoint)
@@ -101,15 +107,15 @@ def apply_user_decision(
             }
         )
     elif decision == "revise":
-        next_action = f"Revise {checkpoint} checkpoint using human feedback: {reason}"
+        next_action = f"Revise {checkpoint} using human feedback: {reason}"
         state.update(
             {
                 "pending_checkpoint": checkpoint,
                 "pending_user_decision": True,
-                "allowed_next_actions": [f"rewrite_{checkpoint}_checkpoint"],
+                "allowed_next_actions": [f"rewrite_{checkpoint}"],
                 "next_action_for_agent": next_action,
                 "next_action_for_codex": next_action,
-                "next_prompt_to_user": f"Review the revised {checkpoint} checkpoint and reply approve / revise / reject / skip.",
+                "next_prompt_to_user": f"Review the revised {checkpoint} and reply approve / revise / reject / skip.",
             }
         )
     elif decision == "reject":

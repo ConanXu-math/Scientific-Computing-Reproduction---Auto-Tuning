@@ -113,13 +113,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", required=True)
     parser.add_argument("--out")
+    parser.add_argument("--no-json", action="store_true", help="Suppress repo_analysis.json output (default)")
     args = parser.parse_args()
     analysis = analyze_repo(args.source)
-    if args.out:
+    print(json.dumps(analysis, indent=2))
+    if args.out and not args.no_json:
         out = Path(args.out)
         out.mkdir(parents=True, exist_ok=True)
         (out / "repo_analysis.json").write_text(json.dumps(analysis, indent=2))
-    print(json.dumps(analysis, indent=2))
 
 
 if __name__ == "__main__":

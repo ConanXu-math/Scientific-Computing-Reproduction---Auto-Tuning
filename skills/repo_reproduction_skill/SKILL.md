@@ -13,38 +13,46 @@ For end-to-end computational math research-code reproduction workflows, this Ski
 ## Scripts
 
 ### repo_analyzer
-Analyzes source code directory. Input: `--source <path>`. Output: `repo_analysis.json` with language, dependencies, entrypoints, detected algorithms, confidence, warnings.
+Analyzes source code directory. Input: `--source <path>`, `--out <path>`. Writes analysis summary to `plan.md` fields (source path, language, entrypoints, detected algorithms, risks) — does not write `repo_analysis.json` by default.
 
 ```bash
 python -m skills.repo_reproduction_skill.scripts.repo_analyzer --source /path/to/repo --out /path/to/output
 ```
 
 ### run_planner
-Generates candidate run plans from `repo_analysis.json`. Input: `--analysis <repo_analysis.json>`. Output: `run_plan.json` with commands, risk levels, timeouts.
+Generates candidate run plans from the analysis. Input: `--analysis <dict or json>`, `--out <path>`. Outputs compact plan fields for `plan.md` — does not write `run_plan.json` by default.
 
 ```bash
-python -m skills.repo_reproduction_skill.scripts.run_planner --analysis repo_analysis.json --out /path/to/output
+python -m skills.repo_reproduction_skill.scripts.run_planner --analysis /path/to/analysis.json --out /path/to/output
 ```
 
 ### executor
-Executes an approved run plan. Input: `--plan <run_plan.json>`. Use `--require-approval <checkpoint>` to block on human approval. Writes `execution_log.jsonl` and `run_log.txt`.
+Executes an approved run plan. Input: `--command <str>`, `--out <path>`, `--timeout <int>`. Writes stdout/stderr to `logs/run.log` and returns exit code. Does not write `run_plan.json` or `execution_log.jsonl` by default.
 
 ```bash
-python -m skills.repo_reproduction_skill.scripts.executor --plan run_plan.json --out /path/to/output --require-approval run_plan
+python -m skills.repo_reproduction_skill.scripts.executor --command "python main.py" --out /path/to/output --timeout 300
 ```
 
 ### result_collector
-Scans executed output for result files and extracts metrics. Input: `--source`, `--out`. Output: `collected_results.json`.
+Scans executed output for result files and extracts metrics. Input: `--source`, `--out`. Writes results to `results/` — does not write `collected_results.json` by default.
 
 ```bash
 python -m skills.repo_reproduction_skill.scripts.result_collector --source /path/to/repo --out /path/to/output
 ```
 
+## Output Rules
+
+- Do not write `repo_analysis.json` by default. Summarize analysis in conversation and in `plan.md` fields.
+- Do not write `run_plan.json` by default. Use compact plan fields.
+- Execution logs go to `logs/run.log`.
+- Results go to `results/`.
+- Figures go to `figures/`.
+- Patches go to `patches/`.
+
 ## Workflow
 
-1. Run `repo_analyzer` to understand the repository
-2. Review `repo_analysis.json` — ask user for confirmation or corrections
-3. Run `run_planner` to generate candidate execution plans
-4. Present plans to user for approval
-5. Run `executor` with approved plan
-6. Run `result_collector` to gather results
+1. Run `repo_analyzer` to understand the repository.
+2. Summarize findings in conversation and in `plan.md` fields.
+3. Generate candidate command(s) and present to user for approval.
+4. Run `executor` with the approved command.
+5. Run `result_collector` to gather results under `results/`.

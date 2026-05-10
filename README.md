@@ -61,8 +61,8 @@ budget, objective metric, and constraints. Wait for approval.
 - `auto_tuning_skill`: tuning plans and grid/random search.
 - `visualization_skill`: convergence and tuning figures.
 - `failure_diagnosis_skill`: failure classification and repair proposals.
-- `human_review_skill`: optional checkpoints and approval logs.
-- `report_generation_skill`: plan, reproduction, tuning, failure, and summary reports.
+- `human_review_skill`: optional approval logs for high-risk operations.
+- `report_generation_skill`: plan, run summary, and tuning summary reports.
 
 ## Default Artifacts
 

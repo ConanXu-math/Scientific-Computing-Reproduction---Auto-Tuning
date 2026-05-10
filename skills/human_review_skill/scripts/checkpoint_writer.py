@@ -14,8 +14,6 @@ CHECKPOINTS = {
     "algorithm_match": ("06_algorithm_match_review.md", "Algorithm Match Review"),
 }
 
-CORE_CHECKPOINTS = ["task_understanding", "run_plan", "failure_fix", "tuning_plan", "final"]
-
 
 def _list_value(value: object) -> str:
     if isinstance(value, list):
@@ -100,6 +98,12 @@ SECTION_RENDERERS = {
 
 
 def write_checkpoint(run: Path | str, checkpoint_type: str, context: dict | None = None) -> Path:
+    """Write a legacy numbered checkpoint file (debug-only).
+
+    This function is retained for debug/legacy use only. The default workflow
+    does not write numbered checkpoint files. Use compact artifacts
+    (plan.md, repair_plan.md, tuning/tuning_plan.md) instead.
+    """
     run = Path(run)
     context = context or {}
     directory = run / "checkpoints"
@@ -112,19 +116,6 @@ def write_checkpoint(run: Path | str, checkpoint_type: str, context: dict | None
 Reply with exactly one decision: `approve`, `revise`, `reject`, or `skip`.
 
 {rendered}
-
-## Raw Context
-```json
-{json.dumps(context, indent=2)}
-```
-
-## Human Decision
-- decision: pending
-- reason:
-- operator:
-
-## Safety Notes
-High-risk commands, source modifications, major dependency changes, long-running experiments, and budget increases require explicit human approval.
 """
     path = directory / filename
     path.write_text(body)
@@ -132,11 +123,11 @@ High-risk commands, source modifications, major dependency changes, long-running
 
 
 def write_all_checkpoints(run: Path | str, context: dict | None = None) -> list[Path]:
-    return [write_checkpoint(run, key, context) for key in CORE_CHECKPOINTS]
+    return [write_checkpoint(run, key, context) for key in CHECKPOINTS]
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Legacy checkpoint writer (debug-only). Default workflow uses compact artifacts instead.")
     parser.add_argument("--type", choices=list(CHECKPOINTS) + ["all"], required=True)
     parser.add_argument("--run", required=True)
     parser.add_argument("--context-json", default="{}")

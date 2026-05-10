@@ -36,13 +36,20 @@ def classify_failure(stderr: str, stdout: str = "") -> dict:
     }
 
 
-def write_failure_analysis(out: Path | str, stderr: str, stdout: str = "", command: str = "") -> Path:
-    out = Path(out)
-    out.mkdir(parents=True, exist_ok=True)
-    result = classify_failure(stderr, stdout)
-    body = f"""# Failure Analysis
+def write_repair_plan(out: Path | str, stderr: str, stdout: str = "", command: str = "") -> Path | None:
+    """Write repair_plan.md only if source/dependency/entrypoint/data changes are needed.
 
-## Error Summary
+    Returns None if no repair is needed.
+    """
+    out = Path(out)
+    result = classify_failure(stderr, stdout)
+    requires_repair = result["requires_human_confirmation"]
+    if not requires_repair:
+        return None
+    out.mkdir(parents=True, exist_ok=True)
+    body = f"""# Repair Plan
+
+## Failure Summary
 {result['summary'] or 'No stderr/stdout evidence was captured.'}
 
 ## Failure Type
@@ -50,20 +57,23 @@ def write_failure_analysis(out: Path | str, stderr: str, stdout: str = "", comma
 
 ## Evidence
 Command: `{command}`
+See `logs/run.log` for full stdout/stderr.
 
-## Suggested Fix
-Review dependencies, entrypoints, data availability, and numerical settings. Do not apply high-risk fixes automatically.
+## Proposed Minimal Repair
+Review dependencies, entrypoints, data availability, and numerical settings.
 
-## Risk Level
-{result['risk_level']}
+## Files To Modify
+{{files_to_modify}}
 
-## Requires Human Confirmation
-{result['requires_human_confirmation']}
+## What Will Not Be Changed
+{{what_will_not_be_changed}}
 
-## Next Step
-Generate or review `03_failure_fix_review.md` before changing source code or dependencies.
+## Patch / Rollback Plan
+{{patch_rollback_plan}}
+
+Reply with approve / revise / reject / skip.
 """
-    path = out / "failure_analysis.md"
+    path = out / "repair_plan.md"
     path.write_text(body)
     return path
 
@@ -76,7 +86,7 @@ def main() -> None:
     args = parser.parse_args()
     result = classify_failure(args.stderr, args.stdout)
     if args.out:
-        write_failure_analysis(args.out, args.stderr, args.stdout)
+        write_repair_plan(args.out, args.stderr, args.stdout)
     print(json.dumps(result, indent=2))
 
 

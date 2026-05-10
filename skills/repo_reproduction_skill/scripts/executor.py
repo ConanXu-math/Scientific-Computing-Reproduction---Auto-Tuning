@@ -6,7 +6,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from skills.failure_diagnosis_skill.scripts.failure_classifier import write_failure_analysis
+from skills.failure_diagnosis_skill.scripts.failure_classifier import write_repair_plan
 from skills.human_review_skill.scripts.approval_gate import check_approval_gate
 
 
@@ -44,10 +44,10 @@ def execute_plans(
                     "error": gate["reason"],
                     "approval_gate": gate,
                 }
-                write_failure_analysis(out, "missing_human_approval", gate["reason"], " ".join(command))
+                write_repair_plan(out, "missing_human_approval", gate["reason"], " ".join(command))
             elif plan.get("risk_level") == "high":
                 result = {"index": index, "command": command, "status": "failed", "exit_code": None, "runtime": 0.0, "error": "high_risk_command"}
-                write_failure_analysis(out, "high_risk_command", "Command marked high risk.", " ".join(command))
+                write_repair_plan(out, "high_risk_command", "Command marked high risk.", " ".join(command))
             else:
                 try:
                     proc = subprocess.run(
@@ -70,7 +70,7 @@ def execute_plans(
                         "stderr": proc.stderr[-4000:],
                     }
                     if status != "success":
-                        write_failure_analysis(out, proc.stderr, proc.stdout, " ".join(command))
+                        write_repair_plan(out, proc.stderr, proc.stdout, " ".join(command))
                 except subprocess.TimeoutExpired as exc:
                     runtime = time.perf_counter() - started
                     result = {
@@ -82,7 +82,7 @@ def execute_plans(
                         "stdout": (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else "",
                         "stderr": (exc.stderr or "")[-4000:] if isinstance(exc.stderr, str) else "",
                     }
-                    write_failure_analysis(out, "timeout", result["stdout"], " ".join(command))
+                    write_repair_plan(out, "timeout", result["stdout"], " ".join(command))
             log_file.write(f"COMMAND {index}: {' '.join(command)}\nSTATUS: {result['status']}\n")
             log_file.write(f"STDOUT:\n{result.get('stdout', '')}\nSTDERR:\n{result.get('stderr', '')}\n\n")
             jsonl.write(json.dumps(result) + "\n")

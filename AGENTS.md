@@ -6,7 +6,7 @@ A coding agent is the operator. Codex is the primary reference operator and impl
 
 The whole repository is Skill-first and Codex-native. Prefer the active coding agent's native abilities to read files, search, reason, edit, inspect outputs, and explain evidence in conversation. Use scripts only as optional tools when they make a local action safer, more reproducible, or easier to log. Do not use or present a CLI pipeline as the workflow driver.
 
-For open-source end-to-end use, start with `skills/computational_math_reproduction_workflow_skill/SKILL.md`. It is the default entrypoint for computational math research-code reproduction workflows, routing the active coding agent to specialist Skills, maintaining `outputs/{run_id}/workflow_state.json`, and enforcing human checkpoints.
+For open-source end-to-end use, start with `skills/computational_math_reproduction_workflow_skill/SKILL.md`. It is the default entrypoint for computational math research-code reproduction workflows.
 
 ## Open-source product boundary
 
@@ -77,7 +77,7 @@ The default Codex-native workflow keeps review artifacts compact:
 - `tuning/tuning_plan.md`: only after reproduction succeeds or partially succeeds and the human approves tuning.
 - `tuning/TUNING_SUMMARY.md`: only after approved tuning runs.
 
-Checkpoint files such as `01_task_understanding.md`, `02_run_plan_review.md`, `03_failure_fix_review.md`, `04_tuning_plan_review.md`, `05_final_review.md`, and `06_algorithm_match_review.md` may still be used when a durable review trail is helpful, but they are not the default workflow driver.
+Checkpoint files such as `01_task_understanding.md`, `02_run_plan_review.md`, `03_failure_fix_review.md`, `04_tuning_plan_review.md`, `05_final_review.md`, and `06_algorithm_match_review.md` are debug-only legacy artifacts — they are not the default workflow driver.
 
 For external algorithm discovery, prefer the active agent's native search/browser/GitHub capabilities in conversation. Use scripts only as optional helpers for structured persistence, batch querying, or reproducibility.
 
@@ -98,7 +98,7 @@ For repository analysis, failure diagnosis, report drafting, and tuning-plan des
 
 - All artifacts must be saved under `outputs/`.
 - All external command logs must be saved.
-- Failed reproduction or tuning must generate `failure_analysis.md`.
+- Failed reproduction or tuning must generate `repair_plan.md` if source/dependency/entrypoint/data changes are needed, otherwise diagnose conversationally.
 - Tuning must not start until the human approves `tuning/tuning_plan.md` or an equivalent tuning checkpoint.
 - Successful reproduction or tuning should generate figures when convergence or tuning data is available.
 

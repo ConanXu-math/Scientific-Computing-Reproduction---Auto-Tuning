@@ -69,14 +69,15 @@ def make_run_plans(analysis: dict) -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--analysis", required=True)
-    parser.add_argument("--out", required=True)
+    parser.add_argument("--out")
     args = parser.parse_args()
     analysis = json.loads(Path(args.analysis).read_text())
     plans = make_run_plans(analysis)
-    out = Path(args.out)
-    out.mkdir(parents=True, exist_ok=True)
-    (out / "run_plan.json").write_text(json.dumps(plans, indent=2))
     print(json.dumps(plans, indent=2))
+    if args.out:
+        out = Path(args.out)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "run_plan.json").write_text(json.dumps(plans, indent=2))
 
 
 if __name__ == "__main__":

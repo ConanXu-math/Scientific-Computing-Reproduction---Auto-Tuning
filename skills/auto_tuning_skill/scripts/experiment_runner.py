@@ -14,7 +14,7 @@ from skills.auto_tuning_skill.scripts.grid_search import generate_grid
 from skills.auto_tuning_skill.scripts.parameter_space import load_parameter_space
 from skills.auto_tuning_skill.scripts.random_search import generate_random
 from skills.auto_tuning_skill.scripts.result_analyzer import choose_best
-from skills.failure_diagnosis_skill.scripts.failure_classifier import write_failure_analysis
+from skills.failure_diagnosis_skill.scripts.failure_classifier import write_repair_plan
 from skills.human_review_skill.scripts.approval_gate import check_approval_gate
 
 
@@ -57,7 +57,7 @@ def run_experiments(
             }
             with log_path.open("a") as handle:
                 handle.write(f"blocked={gate['reason']}\n")
-            write_failure_analysis(out, "missing_human_approval", gate["reason"], "tuning experiments")
+            write_repair_plan(out, "missing_human_approval", gate["reason"], "tuning experiments")
             return [row]
     (out / "trial_logs").mkdir(exist_ok=True)
     space = load_parameter_space(param_space_file)
@@ -80,10 +80,10 @@ def run_experiments(
             row = {"trial": index, **params, **metrics, "exit_code": proc.returncode, "trial_runtime": runtime}
             if proc.returncode != 0:
                 row["success"] = False
-                write_failure_analysis(out, proc.stderr, proc.stdout, " ".join(command))
+                write_repair_plan(out, proc.stderr, proc.stdout, " ".join(command))
         except subprocess.TimeoutExpired as exc:
             row = {"trial": index, **params, "success": False, "failure_type": "timeout", "runtime": 300.0}
-            write_failure_analysis(out, "timeout", str(exc), " ".join(command))
+            write_repair_plan(out, "timeout", str(exc), " ".join(command))
         rows.append(row)
         with log_path.open("a") as handle:
             handle.write(json.dumps({"trial": index, "params": params, "status": row.get("status", "done"), "success": row.get("success")}) + "\n")
