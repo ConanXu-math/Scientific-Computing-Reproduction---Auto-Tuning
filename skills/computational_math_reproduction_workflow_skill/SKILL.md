@@ -6,9 +6,11 @@ version: 0.1.0
 
 # Computational Math Reproduction Workflow Skill
 
-This is the default entrypoint for open-source users of the computational math research-code reproduction system. It coordinates the specialist Skills while keeping an agent-mediated conversation as the main interface. Specialist Skills do not communicate directly; the coding agent uses `outputs/{run_id}/workflow_state.json`, checkpoints, reports, and approval logs as the shared state.
+This is the default entrypoint for open-source users of the computational math research-code reproduction system. The repository is Skill-first and Codex-native: Codex reads the relevant Skills, inspects the source, explains evidence in conversation, writes compact review artifacts, and waits for human approval before consequential execution.
 
-Codex is the primary reference operator for this protocol, but the artifact contract is agent-neutral. Other coding agents can follow the same state, checkpoint, approval, and evidence rules. Codex-native behavior is documented as one implementation profile, not a requirement of the core workflow.
+Codex is the primary reference operator for this protocol, but the artifact contract is agent-neutral. Other coding agents can follow the same Skill documents, review artifacts, approval records, and evidence rules.
+
+Scripts are tools, not drivers. They may help with local execution, logging, plotting, approval records, or repeatable toy checks, but there is no user-facing CLI pipeline and no command-line orchestrator that defines the workflow.
 
 ## When To Use
 
@@ -23,70 +25,67 @@ Use this Skill before any end-to-end task involving:
 - convergence or tuning visualization
 - final report generation
 
-For a narrow one-off task, an agent may use a specialist Skill directly. For any workflow that crosses stages, return here first.
+For a narrow one-off task, Codex may use a specialist Skill directly. For any workflow that crosses stages, return here first.
+
+## Default Flow
+
+The default workflow is compact and conversation-led:
+
+```text
+user goal
+  -> Codex reads relevant Skills
+  -> Codex inspects/searches source
+  -> Codex writes plan.md
+  -> human approves
+  -> Codex runs minimal reproduction
+  -> repair_plan.md only if needed
+  -> RUN_SUMMARY.md
+  -> optional tuning/tuning_plan.md
+  -> tuning/TUNING_SUMMARY.md
+```
+
+Default output locations:
+
+- `outputs/{run_id}/plan.md`
+- `outputs/{run_id}/repair_plan.md` only when source edits, dependency changes, adapters, or entrypoint changes are needed
+- `outputs/{run_id}/RUN_SUMMARY.md`
+- `outputs/{run_id}/tuning/tuning_plan.md` only after reproduction succeeds or partially succeeds and tuning is proposed
+- `outputs/{run_id}/tuning/tuning_results.csv`
+- `outputs/{run_id}/tuning/best_parameters.json`
+- `outputs/{run_id}/tuning/tuning.log`
+- `outputs/{run_id}/tuning/tuning_figures/`
+- `outputs/{run_id}/tuning/TUNING_SUMMARY.md`
+
+Debug checkpoints may still be written under `outputs/{run_id}/checkpoints/` when a durable review trail is useful, but they are optional documentation, not the default workflow mechanism.
 
 ## Required Start Sequence
 
 1. Understand the user goal: search, reproduce, deploy, tune, report, or a combination.
-2. Create or read `outputs/{run_id}/workflow_state.json`.
-3. Select specialist Skills using `references/skill_routing.md`.
-4. Generate the current checkpoint using `human_review_skill`.
-5. Summarize the checkpoint in conversation and wait for `approve / revise / reject / skip`.
+2. Select specialist Skills using `references/skill_routing.md`.
+3. Inspect the source or search candidates with Codex-native tools first.
+4. Write `outputs/{run_id}/plan.md` with the task interpretation, candidate command, risks, timeout, and expected evidence.
+5. Summarize the plan in conversation and wait for `approve / revise / reject / skip`.
+
+Use `outputs/{run_id}/workflow_state.json` when durable resume state is useful. It is a state helper, not a workflow driver.
 
 ## Conversation Playbook
 
 Use this Skill as a coding-agent conversation protocol, not as a fully automatic batch runner.
 
 1. Generate a stable `run_id` when the user has not provided one. Prefer a short descriptive name plus date or a numbered `run_###` directory under `outputs/`.
-2. Call or mirror `scripts/workflow_state.py create` before any consequential stage. If `workflow_state.json` already exists, resume from it instead of restarting.
-3. Inspect the source and route to specialist Skills. Record the selected Skills in `selected_skills`.
-4. Write the stage checkpoint and set `pending_checkpoint`, `pending_user_decision`, `allowed_next_actions`, `next_action_for_agent`, and `next_prompt_to_user`.
-5. Summarize evidence in conversation. Ask for exactly one of `approve`, `revise`, `reject`, or `skip`.
-6. When the user responds, apply the decision to the pending checkpoint. If there is no `pending_checkpoint`, do not infer approval; ask which checkpoint the decision applies to.
-7. Execute only actions listed in `allowed_next_actions`. If an action is blocked, add it to `blocked_actions` and route to failure diagnosis or human review.
-8. Add every durable file, log, report, figure, and checkpoint that supports a decision to `evidence_artifacts`.
+2. Inspect files, dependency manifests, candidate entrypoints, metrics, and algorithm evidence directly.
+3. Route to specialist Skills. Record selected Skills in conversation and, when useful, in `workflow_state.json`.
+4. Write `plan.md` before execution. Include the minimal reproduction command, why it is selected, risk level, timeout, expected outputs, and what will be logged.
+5. Ask for exactly one of `approve`, `revise`, `reject`, or `skip`.
+6. After approval, execute only the approved minimal reproduction. If using the executor helper, call it with `--require-approval run_plan`.
+7. If execution fails or repair is needed, write `repair_plan.md`, explain the evidence, and ask for approval before source edits, dependency changes, adapters, or entrypoint changes.
+8. Write `RUN_SUMMARY.md` with reproduction status, logs, metrics, limitations, and next options.
+9. Propose tuning only after reproduction succeeds or partially succeeds. Write `tuning/tuning_plan.md`, ask for approval, and only then run tuning. If using the tuning helper, call it with `--require-approval tuning_plan`.
+10. Write `tuning/TUNING_SUMMARY.md` after approved tuning. Ask for final review before accepting conclusions.
 
-## Stage Artifact Protocol
+## Optional State Fields
 
-| Stage | Required Inputs | Required Outputs | Pending Checkpoint |
-| --- | --- | --- | --- |
-| `task_understanding` | user task, source hint, local files or external source summary | `checkpoints/01_task_understanding.md`, `workflow_state.json` | `task_understanding` |
-| `algorithm_discovery` | task understanding, algorithm keywords, optional external search results | `checkpoints/06_algorithm_match_review.md`, ranked candidates | `algorithm_match` |
-| `repo_analysis` | source path or fetched repository | `repo_analysis.json`, candidate entrypoints, dependency summary | none unless uncertainty requires review |
-| `environment_plan` | repo analysis and dependency files | environment report, install-risk notes | `failure_fix` when dependency changes are needed |
-| `run_plan` | repo analysis and environment report | `checkpoints/02_run_plan_review.md`, `run_plan.json` | `run_plan` |
-| `reproduction` | approved run plan | `execution_log.jsonl`, `run_log.txt`, collected outputs | none; failed runs route to `failure_fix` |
-| `failure_fix` | failed execution evidence | `checkpoints/03_failure_fix_review.md`, `failure_analysis.md` | `failure_fix` |
-| `tuning_plan` | successful or partially successful reproduction evidence | `checkpoints/04_tuning_plan_review.md`, parameter space and budget | `tuning_plan` |
-| `tuning` | approved tuning plan | tuning results, tuning logs, optional best parameters | none; failures route to `failure_fix` |
-| `visualization` | convergence or tuning metrics | figures under `figures/` | none unless conclusions change |
-| `reporting` | logs, reports, figures, checkpoints | final Markdown report | `final` |
-| `final_review` | full evidence chain | `checkpoints/05_final_review.md` | `final` |
-
-## Stage Order
-
-`task_understanding -> algorithm_discovery? -> repo_analysis -> environment_plan -> run_plan -> reproduction -> failure_fix? -> tuning_plan? -> tuning? -> visualization -> reporting -> final_review`
-
-Optional stages are used only when the task needs them.
-
-## Human Gates
-
-Pause for human confirmation before you:
-
-- execute external code
-- install or upgrade dependencies
-- create an adapter or wrapper
-- modify source
-- replace an entrypoint or data
-- start tuning
-- expand tuning budget
-- accept a final conclusion
-
-Repository execution must use `executor.py --require-approval run_plan`. Tuning execution must use `experiment_runner.py --require-approval tuning_plan`.
-
-## Shared State
-
-Use `scripts/workflow_state.py` or equivalent agent-native file editing to keep `workflow_state.json` current with:
+When `workflow_state.json` is useful, keep it current with:
 
 - `schema_version`
 - `run_id`
@@ -101,16 +100,39 @@ Use `scripts/workflow_state.py` or equivalent agent-native file editing to keep 
 - `allowed_next_actions`
 - `evidence_artifacts`
 - `next_action_for_agent`
-- `next_action_for_codex`
 - `next_prompt_to_user`
 
-`next_action_for_agent` is the protocol field. `next_action_for_codex` is retained as a backward-compatible alias for existing Codex-oriented scripts and documentation.
+`pending_checkpoint` and `pending_user_decision` may refer to compact artifacts such as `plan.md`, `repair_plan.md`, or `tuning/tuning_plan.md`, not only numbered checkpoint files.
+
+## Human Gates
+
+Pause for human confirmation before you:
+
+- execute external code
+- install or upgrade dependencies
+- create an adapter or wrapper
+- modify source
+- replace an entrypoint or data
+- start tuning
+- expand tuning budget
+- accept a final conclusion
+
+## Specialist Routing
+
+- Use `algorithm_discovery_skill` when the user asks Codex to search for external algorithms or implementations.
+- Use `repo_reproduction_skill` for repository analysis, run planning, execution, and result collection.
+- Use `environment_deployment_skill` for dependency and runtime reports.
+- Use `failure_diagnosis_skill` when a run fails or repair is needed.
+- Use `auto_tuning_skill` only after reproduction succeeds or partially succeeds and the human approves tuning.
+- Use `visualization_skill` when convergence or tuning metrics can be plotted.
+- Use `report_generation_skill` for `plan.md`, `RUN_SUMMARY.md`, and tuning summaries.
+- Use `human_review_skill` when durable approval logs or numbered checkpoints are useful.
 
 ## References
 
 - `references/skill_routing.md`: map user intent and stages to specialist Skills.
-- `references/checkpoint_contract.md`: checkpoint and approval rules.
+- `references/checkpoint_contract.md`: optional checkpoint and approval rules.
 
 ## Acceptance
 
-A coding agent can restart from `workflow_state.json`, route to the right specialist Skills, block unapproved execution, and produce reports under `outputs/{run_id}/`.
+A coding agent can start from a natural-language goal, read the Skills, inspect or search the source, write `plan.md`, wait for approval, run a minimal reproduction, produce `RUN_SUMMARY.md`, and optionally run approved tuning under `tuning/` without invoking a user-facing CLI pipeline.

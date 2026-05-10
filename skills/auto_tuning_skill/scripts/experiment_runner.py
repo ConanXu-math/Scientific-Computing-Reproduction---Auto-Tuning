@@ -42,6 +42,10 @@ def run_experiments(
     source = Path(source)
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
+    log_path = out / "tuning.log"
+    log_path.write_text(
+        f"source={source}\nparam_space={param_space_file}\nbudget={budget}\nmethod={method or 'auto'}\n"
+    )
     if require_approval:
         gate = check_approval_gate(out, require_approval, risk_level="low", auto_approve_low_risk=auto_approve_low_risk)
         if not gate["allowed"]:
@@ -51,6 +55,8 @@ def run_experiments(
                 "error": gate["reason"],
                 "approval_gate": gate,
             }
+            with log_path.open("a") as handle:
+                handle.write(f"blocked={gate['reason']}\n")
             write_failure_analysis(out, "missing_human_approval", gate["reason"], "tuning experiments")
             return [row]
     (out / "trial_logs").mkdir(exist_ok=True)
@@ -79,6 +85,8 @@ def run_experiments(
             row = {"trial": index, **params, "success": False, "failure_type": "timeout", "runtime": 300.0}
             write_failure_analysis(out, "timeout", str(exc), " ".join(command))
         rows.append(row)
+        with log_path.open("a") as handle:
+            handle.write(json.dumps({"trial": index, "params": params, "status": row.get("status", "done"), "success": row.get("success")}) + "\n")
 
     fieldnames = sorted({key for row in rows for key in row})
     with (out / "tuning_results.csv").open("w", newline="") as handle:
@@ -87,6 +95,8 @@ def run_experiments(
         writer.writerows(rows)
     best = choose_best(rows)
     (out / "best_parameters.json").write_text(json.dumps(best, indent=2))
+    with log_path.open("a") as handle:
+        handle.write(f"best_parameters={json.dumps(best, sort_keys=True)}\n")
     return rows
 
 

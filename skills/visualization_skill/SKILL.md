@@ -20,7 +20,7 @@ python -m skills.visualization_skill.scripts.convergence_plotter --convergence-c
 ```
 
 ### tuning_plotter
-Input: `--tuning-csv <path>`. Output: SVG files under `figures/`
+Input: `--tuning-csv <path>`. Output: SVG files under `tuning/tuning_figures/` for approved tuning runs, or another agent-selected figure directory for one-off plotting.
 
 ```bash
 python -m skills.visualization_skill.scripts.tuning_plotter --tuning-csv tuning_results.csv --out /path/to/output

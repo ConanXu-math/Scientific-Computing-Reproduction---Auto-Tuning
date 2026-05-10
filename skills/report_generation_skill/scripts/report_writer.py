@@ -13,6 +13,13 @@ def _read_json(path: Path):
     return json.loads(path.read_text()) if path.exists() else None
 
 
+def _first_existing(*paths: Path) -> Path | None:
+    for path in paths:
+        if path.exists():
+            return path
+    return None
+
+
 def _pip_freeze() -> str:
     try:
         proc = subprocess.run([sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True, timeout=60, check=False)
@@ -26,16 +33,32 @@ def write_reports(run: Path | str) -> list[Path]:
     run.mkdir(parents=True, exist_ok=True)
     analysis = _read_json(run / "repo_analysis.json") or {}
     executions = [json.loads(line) for line in (run / "execution_log.jsonl").read_text().splitlines()] if (run / "execution_log.jsonl").exists() else []
-    best = _read_json(run / "best_parameters.json") or {}
+    tuning_dir = run / "tuning"
+    best_path = _first_existing(tuning_dir / "best_parameters.json", run / "best_parameters.json")
+    best = _read_json(best_path) if best_path else {}
     tuning_rows = []
-    if (run / "tuning_results.csv").exists():
-        tuning_rows = list(csv.DictReader((run / "tuning_results.csv").open()))
+    tuning_csv = _first_existing(tuning_dir / "tuning_results.csv", run / "tuning_results.csv")
+    if tuning_csv:
+        tuning_rows = list(csv.DictReader(tuning_csv.open()))
     figures = sorted((run / "figures").glob("*.svg")) if (run / "figures").exists() else []
     figure_links = "\n".join(f"![{path.stem}](figures/{path.name})" for path in figures)
     convergence_links = "\n".join(f"![{path.stem}](figures/{path.name})" for path in figures if path.name.startswith("convergence"))
     tuning_links = "\n".join(f"![{path.stem}](figures/{path.name})" for path in figures if path.name.startswith("tuning"))
 
     reports = {
+        "plan.md": f"""# Reproduction Plan
+
+- Goal: reproduce the minimal approved computational math demo.
+- Repo path: {analysis.get('repo_path', 'unknown')}
+- Detected language: {analysis.get('language', 'unknown')}
+- Detected algorithm: {analysis.get('detected_algorithms', [])}
+- Candidate entrypoints: {analysis.get('candidate_entrypoints', [])}
+- Risk level: pending_human_review
+- Timeout: define before execution
+- Expected evidence: run logs, metrics, and a final `RUN_SUMMARY.md`.
+
+Codex should ask for human approval before executing external code.
+""",
         "environment_report.md": f"""# Environment Report
 
 - OS: {platform.platform()}
@@ -74,7 +97,7 @@ See `run_log.txt` for stdout/stderr summaries and `collected_results.json` when 
 - Budget: {len(tuning_rows)}
 - Best parameters: {best}
 - Best metric value: {best.get('runtime', 'unknown')}
-- tuning_results.csv: `{run / 'tuning_results.csv'}`
+- tuning_results.csv: `{tuning_csv or tuning_dir / 'tuning_results.csv'}`
 - Failed trials: {sum(1 for row in tuning_rows if str(row.get('success')).lower() in {'false', '0'})}
 - Recommended configuration: {best}
 
@@ -97,10 +120,28 @@ No failure evidence has been recorded.
 ## Figures
 {figure_links or 'No figures generated.'}
 """,
+        "RUN_SUMMARY.md": f"""# Run Summary
+
+- Status: {'success_or_partial' if executions or tuning_rows else 'needs_human_review'}
+- Reproduction succeeded: {any(item.get('status') == 'success' for item in executions)}
+- Tuning completed: {bool(tuning_rows)}
+- Evidence directory: `{run}`
+- Main logs: `run_log.txt`, `execution_log.jsonl`
+- Limits: review source-specific assumptions, dependency changes, and any failed trials before accepting final conclusions.
+""",
+        "tuning/TUNING_SUMMARY.md": f"""# Tuning Summary
+
+- Tuning status: {'completed' if tuning_rows else 'not_run'}
+- Trials: {len(tuning_rows)}
+- Best parameters: {best}
+- Results file: `{tuning_csv or tuning_dir / 'tuning_results.csv'}`
+- Figures directory: `tuning/tuning_figures/`
+""",
     }
     written = []
     for name, body in reports.items():
         path = run / name
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(body)
         written.append(path)
     return written

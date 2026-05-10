@@ -4,13 +4,28 @@ This repository develops a Skill-driven Computational Math Reproduction, Deploym
 
 A coding agent is the operator. Codex is the primary reference operator and implementation profile for this repository, but the workflow artifacts are intended to be usable by other coding agents. Skills are the workflow control layer. Scripts are optional tools that an agent can call during the conversation. The human is the decision maker at checkpoints.
 
-The whole repository is agent-native first. Prefer the active coding agent's native abilities to read files, search, reason, edit, inspect outputs, and explain evidence in conversation. Use scripts or CLI only when reproducibility, structured artifacts, logs, tests, or batch execution make them useful.
+The whole repository is Skill-first and Codex-native. Prefer the active coding agent's native abilities to read files, search, reason, edit, inspect outputs, and explain evidence in conversation. Use scripts only as optional tools when they make a local action safer, more reproducible, or easier to log. Do not use or present a CLI pipeline as the workflow driver.
 
 For open-source end-to-end use, start with `skills/computational_math_reproduction_workflow_skill/SKILL.md`. It is the default entrypoint for computational math research-code reproduction workflows, routing the active coding agent to specialist Skills, maintaining `outputs/{run_id}/workflow_state.json`, and enforcing human checkpoints.
 
 ## Open-source product boundary
 
-What you **ship to users** is the **Skill layer** under `skills/` (plus this contract: conversation, checkpoints, `outputs/{run_id}/`, approvals). A user’s **inputs** are natural-language goals, optional local paths or remote repositories, and any task YAML or commands **they** define. Nothing in `tests/` or `tests/fixtures/` is required to *use* the system: those exist only for **maintainers** to verify scripts and gates. The public design goal is: **drive the workflow through Skills** (and the agent reading them), not through a bundled demo tree.
+What you **ship to users** is the **Skill layer** under `skills/` (plus this contract: conversation, compact review artifacts, `outputs/{run_id}/`, approvals). A user’s **inputs** are natural-language goals plus optional local paths, remote repositories, or archives. Nothing in `tests/` or `tests/fixtures/` is required to *use* the system: those exist only for **maintainers** to verify scripts and gates. The public design goal is: **drive the workflow through Skills** (and the agent reading them), not through a bundled demo tree.
+
+## Design Boundary
+
+This repository is Skill-first and Codex-native.
+
+It is not:
+
+- a CLI-first package;
+- a fully automatic pipeline;
+- a benchmark platform;
+- a reproduction case library.
+
+The normal interface is conversation with a coding agent.
+
+This repository does not provide a user-facing CLI pipeline.
 
 ## Runtime Environment
 
@@ -52,16 +67,19 @@ Do not install this project into the user's global Python environment.
 
 Do not present this system as a fully automatic harness. The normal interface is human-agent dialogue.
 
-## Required Checkpoints
+## Review Artifacts
 
-- `01_task_understanding.md`: domain, algorithm family, problem type, expected goal, metrics.
-- `02_run_plan_review.md`: candidate commands, reasons, timeouts, risk levels.
-- `03_failure_fix_review.md`: dependency conflicts, source edits, entrypoint changes, missing data.
-- `04_tuning_plan_review.md`: parameter space, search method, budget, metric, constraints.
-- `05_final_review.md`: reproduction status and evidence.
-- `06_algorithm_match_review.md`: external algorithm candidates, sources, match evidence, and human selection.
+The default Codex-native workflow keeps review artifacts compact:
 
-For external algorithm discovery, prefer the active agent's native search/browser/GitHub capabilities in conversation. Use CLI scripts only as optional helpers for structured persistence, batch querying, or reproducibility.
+- `plan.md`: task interpretation, candidate command, risk, timeout, and expected evidence before execution.
+- `repair_plan.md`: only when source edits, dependency changes, adapters, or other repairs are needed.
+- `RUN_SUMMARY.md`: reproduction status, evidence, limits, and recommended next steps.
+- `tuning/tuning_plan.md`: only after reproduction succeeds or partially succeeds and the human approves tuning.
+- `tuning/TUNING_SUMMARY.md`: only after approved tuning runs.
+
+Checkpoint files such as `01_task_understanding.md`, `02_run_plan_review.md`, `03_failure_fix_review.md`, `04_tuning_plan_review.md`, `05_final_review.md`, and `06_algorithm_match_review.md` may still be used when a durable review trail is helpful, but they are not the default workflow driver.
+
+For external algorithm discovery, prefer the active agent's native search/browser/GitHub capabilities in conversation. Use scripts only as optional helpers for structured persistence, batch querying, or reproducibility.
 
 For repository analysis, failure diagnosis, report drafting, and tuning-plan design, also prefer agent-native reasoning and file inspection first. Scripts are helpers, not the interface.
 
@@ -69,20 +87,20 @@ For repository analysis, failure diagnosis, report drafting, and tuning-plan des
 
 - Low-risk read-only analysis can run without approval.
 - Low-risk demo commands can run after run-plan approval.
-- Execution helpers must enforce approval when they support it. Use `executor.py --require-approval run_plan` for repository reproduction runs.
+- Execution helpers must enforce approval when they support it. `executor.py --require-approval run_plan` may be used for repository reproduction runs after the human approves `plan.md`.
 - High-risk commands always require human approval.
 - Source modifications require human approval.
 - Dependency version changes beyond declared install files require human approval.
 - Long experiments and tuning budget expansion require human approval.
-- Final conclusions require `05_final_review.md`.
+- Final conclusions require human review in conversation; `05_final_review.md` is optional durable evidence.
 
 ## Output Rules
 
 - All artifacts must be saved under `outputs/`.
 - All external command logs must be saved.
 - Failed reproduction or tuning must generate `failure_analysis.md`.
-- Tuning must not start until `04_tuning_plan_review.md` exists and is approved.
-- Successful reproduction or tuning should generate figures under `outputs/{run_id}/figures/` when convergence or tuning data is available.
+- Tuning must not start until the human approves `tuning/tuning_plan.md` or an equivalent tuning checkpoint.
+- Successful reproduction or tuning should generate figures when convergence or tuning data is available.
 
 ## Safety Rules
 

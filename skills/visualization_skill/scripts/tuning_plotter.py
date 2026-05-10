@@ -28,9 +28,10 @@ def plot_tuning(tuning_csv: Path | str, out: Path | str, metric: str = "runtime"
     for value in metric_values:
         current = value if current is None else min(current, value)
         best.append(current)
+    figure_dir = out / "tuning" / "tuning_figures"
     figures = [
-        write_line_chart(out / "figures" / "tuning_runtime.svg", "Tuning Runtime by Trial", trials, {metric: metric_values}, metric),
-        write_line_chart(out / "figures" / "tuning_best_so_far.svg", "Best Feasible Metric So Far", trials, {"best_so_far": best}, metric),
+        write_line_chart(figure_dir / "tuning_runtime.svg", "Tuning Runtime by Trial", trials, {metric: metric_values}, metric),
+        write_line_chart(figure_dir / "tuning_best_so_far.svg", "Best Feasible Metric So Far", trials, {"best_so_far": best}, metric),
     ]
     return figures
 

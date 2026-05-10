@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "computational-math-skills"
 version = "0.1.0"
-description = "Skill-driven computational math reproduction, deployment, tuning, visualization, and reporting MVP for coding agents (Codex is the primary reference operator)."
+description = "Skill-first, Codex-native computational math reproduction, deployment, tuning, visualization, and reporting toolkit for coding agents."
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.23", "pyyaml>=6.0"]
 
