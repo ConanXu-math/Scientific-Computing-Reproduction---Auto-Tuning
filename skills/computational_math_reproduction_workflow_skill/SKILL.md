@@ -78,16 +78,18 @@ outputs/{run_id}/
 ## Required Start Sequence
 
 1. Understand the user goal: search, reproduce, deploy, tune, report, or a combination.
-2. Select specialist Skills using `references/skill_routing.md`.
+2. Select domain, runtime, and workflow Skills using `references/skill_routing.md`.
 3. Inspect the source or search candidates with Codex-native tools first.
-4. Write `outputs/{run_id}/plan.md` with the task interpretation, candidate command, risks, timeout, and expected evidence.
-5. Summarize the plan in conversation and wait for `approve / revise / reject / skip`.
+4. Use `computational_math_domain_skill` when the computational math domain is not already known.
+5. Use runtime Skills such as `matlab_runtime_skill` when the source language or toolchain needs backend-specific handling.
+6. Write `outputs/{run_id}/plan.md` with the task interpretation, candidate command, risks, timeout, and expected evidence.
+7. Summarize the plan in conversation and wait for `approve / revise / reject / skip`.
 
 ## Conversation Playbook
 
 1. Generate a stable `run_id` when the user has not provided one. Prefer a short descriptive name plus date or a numbered `run_###` directory under `outputs/`.
-2. Inspect files, dependency manifests, candidate entrypoints, metrics, and algorithm evidence directly.
-3. Route to specialist Skills. Record selected Skills in conversation.
+2. Inspect files, dependency manifests, candidate entrypoints, metrics, language/runtime evidence, and domain evidence directly.
+3. Route to domain, runtime, and workflow Skills. Record selected Skills in conversation.
 4. Write `plan.md` before execution. Include the minimal reproduction command, why it is selected, risk level, timeout, expected outputs, and what will be logged.
 5. Ask for exactly one of `approve`, `revise`, `reject`, or `skip`.
 6. After approval, execute only the approved minimal reproduction. Log stdout/stderr to `logs/run.log`.
@@ -112,6 +114,9 @@ Pause for human confirmation before you:
 ## Specialist Routing
 
 - Use `algorithm_discovery_skill` when the user asks Codex to search for external algorithms or implementations.
+- Use `computational_math_domain_skill` to classify broad computational math domains before choosing mature specialist Skills.
+- Use `continuous_optimization_skill` when the domain card or source evidence points to ADMM, PPA, proximal gradient, primal-dual, augmented Lagrangian, or related methods.
+- Use `matlab_runtime_skill` when the source contains MATLAB files, MATLAB toolbox requirements, or MATLAB MCP execution opportunities.
 - Use `repo_reproduction_skill` for repository analysis, run planning, execution, and result collection.
 - Use `environment_deployment_skill` for dependency and runtime reports.
 - Use `failure_diagnosis_skill` when a run fails or repair is needed.

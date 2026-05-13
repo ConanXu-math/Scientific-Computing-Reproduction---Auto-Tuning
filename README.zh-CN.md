@@ -1,68 +1,100 @@
-# 计算数学科研代码复现与调参 Skills
+# AI4Math 计算数学复现 Skills
 
-本仓库是一个 Skill-first、Codex-native 的计算数学科研代码复现工作区。它为 coding agent 提供一组可阅读、可执行的 Skills，用来理解用户目标、检查科研代码仓库、规划最小复现、收集证据、提出修复、调参、生成图表，并写出紧凑总结。
+一个面向 coding agent 的 **Skill-first workflow package（工作流包）**，用于计算数学科研代码复现、运行时部署、自动调参、可视化和报告生成。
 
-第一阶段重点覆盖 Python 连续优化，尤其是 ADMM、proximal methods、primal-dual methods、PPA 和 augmented Lagrangian workflows。
+## 这是什么
 
-## 工作方式
+AI4Math Reproduction Skills 为 coding agent 提供一套可复用的计算数学科研代码工作流层。Agent 读取 Skills，检查目标仓库或本地路径，判断计算数学领域，写出紧凑运行计划，等待人工确认，只执行获批步骤，诊断失败，提出调参方案，在有价值时生成图表，并写出有证据支撑的总结。
 
-你用自然语言和 Codex 对话。Codex 读取 `skills/` 下的 Skill 文档，检查目标源码，写出紧凑计划，在关键步骤前请求确认，然后把证据记录到 `outputs/{run_id}/`。
+本仓库不是 CLI-first package，不是全自动 pipeline，不是 benchmark platform，也不是复现案例库。正常使用方式是和 coding agent 对话。Scripts 只是可选辅助工具，**不是工作流驱动器**。
 
-端到端复现任务从 `skills/computational_math_reproduction_workflow_skill/SKILL.md` 开始。人类始终是审批节点的决策者；scripts 是 Codex 在需要时调用的小工具，用来让执行、日志、绘图或审批记录更容易验证。
+## 给谁用
 
-## Codex-Native 用法
+这套 package 面向 Codex、Claude Code、Gemini、OpenCode 等 agentic coding 环境。它仍然是 Codex-native 的参考 operator profile，但真正对外共享的产品是 `skills/` 下的 Skill 层，而不是某个平台壳。
 
-直接把目标告诉当前 coding agent。计算数学科研代码复现类端到端任务应先让 agent 使用 `computational_math_reproduction_workflow_skill`，再由它选择具体专项 Skill、查代码、搜索资料、总结证据，并在关键节点停下来确认。
+人类用户仍然是 checkpoint 的决策者。Agent 可以检查、推理、规划和运行获批命令，但关键执行、源码修改、依赖变更、长时间实验、调参和最终结论都需要人工 review。
 
-示例 prompt：
+## 快速开始
+
+根据你的 coding agent 选择入口：
+
+- Codex：阅读 `.codex/INSTALL.md`。
+- Claude Code：阅读 `CLAUDE.md`。
+- Gemini：阅读 `GEMINI.md`。
+- OpenCode：阅读 `.opencode/INSTALL.md`。
+
+然后用默认 Skill 启动端到端任务：
 
 ```text
 Use computational_math_reproduction_workflow_skill.
 
 Goal:
-Search for an ADMM/LASSO Python implementation, reproduce the minimal serial demo,
-and after it runs, optionally propose a small tuning plan.
+Inspect this computational math repository, classify the domain,
+write plan.md, and wait for approval before executing anything.
 
 Output policy:
-- keep outputs compact;
-- write plan.md before execution;
-- write repair_plan.md only when source/dependency changes are needed;
-- write RUN_SUMMARY.md at the end;
-- put tuning artifacts under tuning/ only when tuning is approved;
-- use scripts only as optional tools, not as the workflow driver.
+- route through skills/registry.yaml;
+- keep durable artifacts under outputs/{run_id}/;
+- use scripts only as optional helpers, not the workflow driver;
+- ask before execution, source edits, dependency changes, or tuning.
 ```
 
-其他常用 prompt：
+## 默认工作流
 
-```text
-请分析我提供的本地路径或 Git 仓库，判断它是什么连续优化问题，
-写出 plan.md 供我审核，先不要执行。
-```
+默认入口是 `skills/computational_math_reproduction_workflow_skill/SKILL.md`。
 
-```text
-请帮我搜索适合 LASSO / ADMM 任务的外部算法候选，
-优先看论文、项目主页和 GitHub，实现证据讲清楚后让我选择。
-```
+高层流程是：
 
-```text
-这个 demo 已经复现了，请提出 tuning/tuning_plan.md：
-参数空间、预算、目标指标和约束都说明清楚，等我确认。
-```
+1. 理解用户目标和目标源码。
+2. 使用 `skills/registry.yaml` 路由到领域、运行时、环境、诊断、调参、可视化、review 和报告 Skills。
+3. 在 `outputs/{run_id}/` 下写紧凑的 `plan.md`。
+4. 请求人类 approve、revise、reject 或 skip 下一步关键操作。
+5. 只执行获批步骤，并保存有边界的命令日志。
+6. 只在有证据价值时写 `repair_plan.md`、`RUN_SUMMARY.md`、调参产物或图表。
 
-## Skills
+## Skill 架构
 
-- `computational_math_reproduction_workflow_skill`：本计算数学科研代码复现系统的默认入口，负责选择专项 Skill，并让 Codex 保持 operator 角色。
-- `repo_reproduction_skill`：仓库分析、运行计划、复现执行、结果收集。
-- `environment_deployment_skill`：环境部署方案、依赖识别和环境报告。
-- `continuous_optimization_skill`：识别 ADMM、PPA、proximal gradient、primal-dual 等算法。
-- `algorithm_discovery_skill`：搜索外部公开算法候选。
-- `auto_tuning_skill`：生成调参计划，运行 grid/random search。
-- `visualization_skill`：生成收敛曲线和调参图。
-- `failure_diagnosis_skill`：分类运行失败并提出修复建议。
-- `human_review_skill`：可选 checkpoint 和人工确认日志。
-- `report_generation_skill`：生成 plan、复现、调参、失败和总结报告。
+每个 Skill 仍然以 `SKILL.md` 为主入口。配套的 `manifest.yaml` 和 `skills/registry.yaml` 让 agent 和维护者更容易检查 Skill 层：它们声明阶段、依赖、预期产物、风险等级和审批边界。
 
-## 默认产物
+- `computational_math_reproduction_workflow_skill`：默认 workflow 入口。
+- `computational_math_domain_skill`：计算数学大领域路由器。
+- `continuous_optimization_skill`：成熟 specialist Skill，覆盖 ADMM、PPA、proximal、primal-dual 和 augmented Lagrangian 方法。
+- `matlab_runtime_skill`：可选 MATLAB 运行时后端规划和获批执行边界。
+- `repo_reproduction_skill`：仓库分析、运行计划、执行和证据收集。
+- `environment_deployment_skill`：依赖和运行环境部署规划。
+- `failure_diagnosis_skill`：失败分类和修复计划。
+- `algorithm_discovery_skill`：外部算法和实现搜索。
+- `auto_tuning_skill`：调参计划和有边界的搜索。
+- `visualization_skill`：收敛曲线和调参图表。
+- `human_review_skill`：审批 checkpoint 和可选日志。
+- `report_generation_skill`：紧凑计划、总结和报告。
+
+## 支持范围
+
+连续优化是第一个成熟领域模块，尤其是 ADMM、proximal methods、primal-dual methods、PPA 和 augmented Lagrangian workflows。
+
+其他计算数学方向先由 `computational_math_domain_skill` 的 reference cards 路由，等需要独立工作流时再拆成 specialist Skills：
+
+- 数值线性代数；
+- 微分方程；
+- PDE/FEM；
+- 随机模拟；
+- 反问题。
+
+Python 是当前主要自动执行目标。MATLAB 通过 `matlab_runtime_skill` 作为可选运行时后端支持；MATLAB 不是 workflow controller。Julia、C++ 和 R 可以被检测和报告，等需要更深支持时再新增 runtime Skills。
+
+## 平台入口
+
+薄平台入口帮助不同 coding agent 加载同一套工作流，而不是复制工作流：
+
+- `.codex/INSTALL.md`：Codex 本地 Skill 安装说明。
+- `.opencode/INSTALL.md`：OpenCode 加载方式和插件壳说明。
+- `CLAUDE.md`：Claude Code 仓库级说明。
+- `GEMINI.md`：Gemini 入口，包含默认 workflow Skill 和 registry。
+
+所有入口都指回 `skills/registry.yaml` 和 `computational_math_reproduction_workflow_skill`。平台文件应保持短小，不应变成另一套 workflow 定义。
+
+## 输出产物
 
 紧凑默认工作流把产物写到 `outputs/{run_id}/`：
 
@@ -72,11 +104,11 @@ Output policy:
 - 只有提出调参时才写 `tuning/tuning_plan.md`；
 - 只有调参被批准后才写 `tuning/tuning_results.csv`、`tuning/best_parameters.json`、`tuning/tuning.log`、`tuning/tuning_figures/` 和 `tuning/TUNING_SUMMARY.md`。
 
-`outputs/{run_id}/checkpoints/` 下的 checkpoint 文件和 `outputs/{run_id}/approvals/` 下的 approval log 仍可作为可选的持久审核机制使用。
+`outputs/{run_id}/checkpoints/` 下的 checkpoint 文件和 `outputs/{run_id}/approvals/` 下的 approval log 仍可作为可选的持久 review 机制使用。
 
 ## 环境
 
-本项目使用和 `/Users/conanxu/paper-to-skill` 相同的 Conda 环境：`ai4math`。
+使用共享 Conda 环境 `ai4math`。
 
 ```bash
 conda create -y -n ai4math python=3.13 pip
@@ -85,10 +117,12 @@ conda run -n ai4math python -m pip install -e ".[dev]"
 
 更多说明见 `docs/environment.md`。
 
-## 维护者测试
+## 维护者说明
+
+运行测试：
 
 ```bash
 conda run -n ai4math pytest
 ```
 
-Pytest 覆盖 helper tools。端到端复现行为通过 Codex smoke runs 验证。
+新增 Skill 时，需要同步更新对应的 `manifest.yaml`、`skills/registry.yaml` 和必要的 routing reference cards。平台入口保持薄壳，优先改共享 Skill 层。

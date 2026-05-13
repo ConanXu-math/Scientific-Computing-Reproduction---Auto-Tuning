@@ -5,8 +5,10 @@ Use `computational_math_reproduction_workflow_skill` as the default entrypoint f
 | User Intent / Stage | Specialist Skill |
 | --- | --- |
 | Search papers, project pages, GitHub implementations, or external algorithm candidates | `algorithm_discovery_skill` |
+| Classify a broad computational math domain before choosing specialist guidance | `computational_math_domain_skill` |
 | Analyze a repository, fetch source, plan commands, run approved reproduction, collect results | `repo_reproduction_skill` |
 | Detect ADMM, PPA, proximal gradient, primal-dual, augmented Lagrangian, or related continuous optimization algorithms | `continuous_optimization_skill` |
+| Handle MATLAB files, toolbox requirements, MATLAB MCP availability, or MATLAB execution plans | `matlab_runtime_skill` |
 | Identify dependency files, deployment strategy, Python environment choices, and installation risks | `environment_deployment_skill` |
 | Record approval decisions for high-risk operations, or enforce human-in-the-loop pauses | `human_review_skill` |
 | Diagnose errors, timeouts, dependency failures, numerical failures, missing data, or unsafe commands | `failure_diagnosis_skill` |
@@ -17,8 +19,10 @@ Use `computational_math_reproduction_workflow_skill` as the default entrypoint f
 ## Routing Rules
 
 - Start with `computational_math_reproduction_workflow_skill` when more than one stage is involved.
+- Add `computational_math_domain_skill` when the task is computational math but the domain is broader than, or not yet known to be, continuous optimization.
+- Add `matlab_runtime_skill` when `.m`, `.mlx`, MATLAB toolbox names, or MATLAB README commands appear.
 - Add `human_review_skill` only when durable approval logs are needed for high-risk operations.
-- Add `continuous_optimization_skill` for first-phase optimization repositories unless the algorithm family is already known.
+- Add `continuous_optimization_skill` for optimization repositories after domain routing or when the algorithm family is already known.
 - Add `failure_diagnosis_skill` immediately after a failed or blocked run.
 - Add `report_generation_skill` after reproduction, tuning, or failure diagnosis.
 
@@ -47,8 +51,10 @@ outputs/{run_id}/
 | Specialist Skill | Input artifacts | Output artifacts | Failure route |
 | --- | --- | --- | --- |
 | `algorithm_discovery_skill` | task understanding, algorithm family, problem type, optional query terms | external search results, ranked candidates | `human_review_skill` for candidate selection or `failure_diagnosis_skill` for search failures |
+| `computational_math_domain_skill` | source path, README/paper notes, user goal | domain classification and evidence summary | `human_review_skill` when domain evidence is ambiguous |
 | `repo_reproduction_skill` | source path or fetched repository | `logs/run.log`, `results/`, `figures/`, analysis summary in `plan.md` | `failure_diagnosis_skill` |
 | `continuous_optimization_skill` | repository files, paper notes, README, scripts | algorithm-family evidence in conversation | `human_review_skill` when evidence is ambiguous |
+| `matlab_runtime_skill` | MATLAB files, toolbox references, optional MCP status | MATLAB runtime plan, logs, toolbox summary | `failure_diagnosis_skill` for execution failures or `human_review_skill` before MCP/config changes |
 | `environment_deployment_skill` | dependency files, repo analysis, runtime constraints | environment findings in conversation | `human_review_skill` before dependency changes |
 | `human_review_skill` | approval context | approval log only for high-risk operations | workflow state |
 | `failure_diagnosis_skill` | failed command, stdout, stderr, logs, traceback | diagnosis in conversation, `repair_plan.md` only if source/dependency/entrypoint/data changes needed | `human_review_skill` before any fix |
