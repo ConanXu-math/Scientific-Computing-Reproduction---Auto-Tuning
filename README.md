@@ -61,7 +61,8 @@ Each Skill is still driven by its `SKILL.md`. The companion `manifest.yaml` file
 - `computational_math_reproduction_workflow_skill`: default workflow entrypoint.
 - `computational_math_domain_skill`: broad computational math domain router.
 - `continuous_optimization_skill`: mature specialist Skill for ADMM, PPA, proximal, primal-dual, and augmented Lagrangian methods.
-- `matlab_runtime_skill`: optional MATLAB runtime backend planning and approved execution boundary.
+- `matlab_environment_setup_skill`: agent-neutral MATLAB, Octave, and MATLAB MCP setup and verification before runtime use.
+- `matlab_runtime_skill`: optional MATLAB/Octave runtime backend inspection, planning, toolbox hints, and approved execution boundary.
 - `repo_reproduction_skill`: repository analysis, run planning, execution, and evidence collection.
 - `environment_deployment_skill`: dependency and runtime setup planning.
 - `failure_diagnosis_skill`: failure classification and repair planning.
@@ -83,7 +84,7 @@ Other computational math areas are routed through `computational_math_domain_ski
 - stochastic simulation;
 - inverse problems.
 
-Python is the primary automatic execution target. MATLAB is supported as an optional runtime backend through `matlab_runtime_skill`; MATLAB is not the workflow controller. Julia, C++, and R can be detected and reported, with deeper runtime support added as separate runtime Skills when needed.
+Python is the primary automatic execution target. MATLAB setup is handled by `matlab_environment_setup_skill` in an agent-neutral way for Codex, Claude Code, Gemini, OpenCode, and generic coding agents. MATLAB runtime use is handled by `matlab_runtime_skill`: the agent can inspect `.m`/`.mlx`/`.mat` artifacts, infer entrypoints and toolbox hints, detect local `matlab` or `octave` executables, and generate approved `matlab -batch` or `octave --eval` run plans. MATLAB is not the workflow controller. Julia, C++, and R can be detected and reported, with deeper runtime support added as separate runtime Skills when needed.
 
 ## Platform Adapters
 

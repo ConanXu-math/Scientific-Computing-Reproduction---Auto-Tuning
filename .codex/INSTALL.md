@@ -40,6 +40,8 @@ Output policy:
 - ask before consequential execution, source edits, dependency changes, or tuning.
 ```
 
+For MATLAB access setup, use `matlab_environment_setup_skill` first; use `matlab_runtime_skill` only after MATLAB, Octave, or MATLAB MCP capability is verified.
+
 ## Maintainer Boundary
 
 Do not duplicate the workflow in this adapter. Update `skills/registry.yaml`, the relevant `SKILL.md`, or the domain/runtime reference cards first; this file should remain a thin Codex installation note.

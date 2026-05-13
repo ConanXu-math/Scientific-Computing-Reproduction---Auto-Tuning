@@ -15,6 +15,7 @@ requires_skills:
   - repo_reproduction_skill
   - environment_deployment_skill
   - continuous_optimization_skill
+  - matlab_environment_setup_skill
   - matlab_runtime_skill
   - failure_diagnosis_skill
   - auto_tuning_skill

@@ -11,6 +11,7 @@ skills:
       - repo_reproduction_skill
       - environment_deployment_skill
       - continuous_optimization_skill
+      - matlab_environment_setup_skill
       - matlab_runtime_skill
       - failure_diagnosis_skill
       - auto_tuning_skill
@@ -76,6 +77,19 @@ skills:
       - matlab_runtime_plan
       - logs/run.log
       - matlab_toolbox_summary
+    risk_level: medium
+  - name: matlab_environment_setup_skill
+    phase: environment
+    path: matlab_environment_setup_skill
+    description: Agent-neutral MATLAB, Octave, and MATLAB MCP environment setup and verification.
+    requires_skills:
+      - environment_deployment_skill
+      - human_review_skill
+      - matlab_runtime_skill
+    output_artifacts:
+      - matlab_environment_report.json
+      - matlab_setup_plan
+      - matlab_capability_summary
     risk_level: medium
   - name: environment_deployment_skill
     phase: environment

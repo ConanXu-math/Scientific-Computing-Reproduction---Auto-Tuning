@@ -20,6 +20,7 @@ def execute_plans(
     out.mkdir(parents=True, exist_ok=True)
     log_path = out / "run_log.txt"
     jsonl_path = out / "execution_log.jsonl"
+    runtime_log_path = out / "logs" / "run.log"
     results = []
 
     with log_path.open("a") as log_file, jsonl_path.open("a") as jsonl:
@@ -85,6 +86,11 @@ def execute_plans(
                     write_repair_plan(out, "timeout", result["stdout"], " ".join(command))
             log_file.write(f"COMMAND {index}: {' '.join(command)}\nSTATUS: {result['status']}\n")
             log_file.write(f"STDOUT:\n{result.get('stdout', '')}\nSTDERR:\n{result.get('stderr', '')}\n\n")
+            if plan.get("runtime") == "MATLAB":
+                runtime_log_path.parent.mkdir(parents=True, exist_ok=True)
+                with runtime_log_path.open("a") as runtime_log:
+                    runtime_log.write(f"COMMAND {index}: {' '.join(command)}\nSTATUS: {result['status']}\n")
+                    runtime_log.write(f"STDOUT:\n{result.get('stdout', '')}\nSTDERR:\n{result.get('stderr', '')}\n\n")
             jsonl.write(json.dumps(result) + "\n")
             results.append(result)
     return results

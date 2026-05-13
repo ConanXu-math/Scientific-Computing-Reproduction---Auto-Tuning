@@ -8,6 +8,7 @@ requires_env:
   conda: ai4math
 requires_tools:
   - agent-native-file-inspection
+  - optional-matlab-or-octave-cli
 requires_skills:
   - environment_deployment_skill
   - human_review_skill
@@ -17,6 +18,7 @@ input_artifacts:
   - optional_matlab_mcp_status
 output_artifacts:
   - matlab_runtime_plan
+  - matlab_runtime_summary.json
   - logs/run.log
   - matlab_toolbox_summary
 optional_capabilities:
@@ -31,4 +33,3 @@ approval_required_for:
   - toolbox_installation
   - source_edit
 risk_level: medium
-

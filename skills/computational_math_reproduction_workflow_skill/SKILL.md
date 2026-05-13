@@ -81,7 +81,7 @@ outputs/{run_id}/
 2. Select domain, runtime, and workflow Skills using `references/skill_routing.md`.
 3. Inspect the source or search candidates with Codex-native tools first.
 4. Use `computational_math_domain_skill` when the computational math domain is not already known.
-5. Use runtime Skills such as `matlab_runtime_skill` when the source language or toolchain needs backend-specific handling.
+5. Use setup Skills such as `matlab_environment_setup_skill` when a runtime is missing or unverified, then runtime Skills such as `matlab_runtime_skill` when the source language or toolchain needs backend-specific handling.
 6. Write `outputs/{run_id}/plan.md` with the task interpretation, candidate command, risks, timeout, and expected evidence.
 7. Summarize the plan in conversation and wait for `approve / revise / reject / skip`.
 
@@ -116,7 +116,8 @@ Pause for human confirmation before you:
 - Use `algorithm_discovery_skill` when the user asks Codex to search for external algorithms or implementations.
 - Use `computational_math_domain_skill` to classify broad computational math domains before choosing mature specialist Skills.
 - Use `continuous_optimization_skill` when the domain card or source evidence points to ADMM, PPA, proximal gradient, primal-dual, augmented Lagrangian, or related methods.
-- Use `matlab_runtime_skill` when the source contains MATLAB files, MATLAB toolbox requirements, or MATLAB MCP execution opportunities.
+- Use `matlab_environment_setup_skill` when MATLAB CLI, Octave, MATLAB MCP, toolbox/license status, or agent-platform exposure must be configured or verified.
+- Use `matlab_runtime_skill` when the source contains MATLAB files, MATLAB toolbox requirements, or MATLAB execution opportunities.
 - Use `repo_reproduction_skill` for repository analysis, run planning, execution, and result collection.
 - Use `environment_deployment_skill` for dependency and runtime reports.
 - Use `failure_diagnosis_skill` when a run fails or repair is needed.

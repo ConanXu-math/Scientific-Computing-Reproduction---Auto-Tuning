@@ -59,7 +59,8 @@ Output policy:
 - `computational_math_reproduction_workflow_skill`：默认 workflow 入口。
 - `computational_math_domain_skill`：计算数学大领域路由器。
 - `continuous_optimization_skill`：成熟 specialist Skill，覆盖 ADMM、PPA、proximal、primal-dual 和 augmented Lagrangian 方法。
-- `matlab_runtime_skill`：可选 MATLAB 运行时后端规划和获批执行边界。
+- `matlab_environment_setup_skill`：面向 Codex、Claude Code、Gemini、OpenCode 和 generic coding agent 的 MATLAB、Octave、MATLAB MCP 配置与验证。
+- `matlab_runtime_skill`：可选 MATLAB/Octave 运行时后端检查、规划、toolbox 提示和获批执行边界。
 - `repo_reproduction_skill`：仓库分析、运行计划、执行和证据收集。
 - `environment_deployment_skill`：依赖和运行环境部署规划。
 - `failure_diagnosis_skill`：失败分类和修复计划。
@@ -81,7 +82,7 @@ Output policy:
 - 随机模拟；
 - 反问题。
 
-Python 是当前主要自动执行目标。MATLAB 通过 `matlab_runtime_skill` 作为可选运行时后端支持；MATLAB 不是 workflow controller。Julia、C++ 和 R 可以被检测和报告，等需要更深支持时再新增 runtime Skills。
+Python 是当前主要自动执行目标。MATLAB 配置由 `matlab_environment_setup_skill` 以 agent-neutral 的方式处理，覆盖 Codex、Claude Code、Gemini、OpenCode 和 generic coding agent。MATLAB 运行时使用由 `matlab_runtime_skill` 处理：agent 可以检查 `.m`/`.mlx`/`.mat` 产物，推断入口和 toolbox 线索，检测本地 `matlab` 或 `octave` 可执行文件，并生成获批后使用的 `matlab -batch` 或 `octave --eval` 运行计划。MATLAB 不是 workflow controller。Julia、C++ 和 R 可以被检测和报告，等需要更深支持时再新增 runtime Skills。
 
 ## 平台入口
 

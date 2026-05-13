@@ -34,6 +34,8 @@ Output policy:
 - treat MATLAB, Python, Julia, C++, and R as runtimes selected by Skills.
 ```
 
+For MATLAB access setup, use `matlab_environment_setup_skill` first; use `matlab_runtime_skill` only after MATLAB, Octave, or MATLAB MCP capability is verified.
+
 ## Maintainer Boundary
 
 Do not fork OpenCode-specific copies of the workflow. Improve the shared Skill layer under `skills/`, then keep this adapter as a compact installation and loading note.

@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 
 from skills.continuous_optimization_skill.scripts.algorithm_detector import detect_algorithm
+from skills.matlab_runtime_skill.scripts.matlab_runtime import analyze_matlab_runtime, readme_matlab_commands
 
 
 DEPENDENCY_FILES = [
@@ -23,7 +24,7 @@ ENTRYPOINT_FILES = ["main.py", "demo.py", "run.py", "train.py", "experiment.py"]
 ENTRYPOINT_DIRS = ["examples", "scripts", "tests", "benchmarks"]
 LANGUAGE_SUFFIXES = {
     "Python": [".py"],
-    "MATLAB": [".m"],
+    "MATLAB": [".m", ".mlx"],
     "Julia": [".jl"],
     "C++": [".cpp", ".cc", ".hpp", ".h"],
     "R": [".r", ".R"],
@@ -63,7 +64,7 @@ def _readme_commands(source: Path) -> list[str]:
         text = readme.read_text(errors="ignore")
         for line in text.splitlines():
             stripped = line.strip().lstrip("$").strip()
-            if re.match(r"^(python|pytest|make|julia|Rscript)\b", stripped):
+            if re.match(r"^(python|pytest|make|julia|Rscript|matlab|octave)\b", stripped):
                 commands.append(stripped)
     return commands
 
@@ -75,6 +76,10 @@ def analyze_repo(source: Path | str) -> dict:
     candidate_entrypoints.extend(name + "/" for name in ENTRYPOINT_DIRS if (source / name).exists())
 
     readme_commands = _readme_commands(source)
+    matlab_summary = analyze_matlab_runtime(source)
+    for command in readme_matlab_commands(source):
+        if command not in readme_commands:
+            readme_commands.append(command)
     detector = detect_algorithm(source)
     detected_algorithms = [] if detector["detected_algorithm"] == "unknown" else [detector["detected_algorithm"]]
     text = " ".join(path.read_text(errors="ignore")[:20000] for path in source.glob("README*") if path.is_file())
@@ -83,8 +88,18 @@ def analyze_repo(source: Path | str) -> dict:
             detected_algorithms.append(keyword)
 
     warnings = []
+    recommended_skills = []
     language = _detect_language(source)
-    if language != "Python":
+    if matlab_summary["matlab_files"]:
+        recommended_skills.append("matlab_runtime_skill")
+        candidate_entrypoints.extend(
+            entrypoint
+            for entrypoint in matlab_summary["entrypoint_candidates"]
+            if entrypoint not in candidate_entrypoints
+        )
+    if language == "MATLAB":
+        warnings.append("MATLAB execution requires matlab_runtime_skill, run-plan approval, and MATLAB/Octave or MATLAB MCP availability.")
+    elif language != "Python":
         warnings.append(f"{language} is detect-only in the MVP.")
     if not candidate_entrypoints:
         warnings.append("No obvious run entrypoint detected.")
@@ -104,6 +119,8 @@ def analyze_repo(source: Path | str) -> dict:
         "candidate_entrypoints": candidate_entrypoints,
         "readme_commands": readme_commands,
         "detected_algorithms": detected_algorithms,
+        "recommended_skills": recommended_skills,
+        "matlab": matlab_summary,
         "confidence": min(confidence, 1.0),
         "warnings": warnings,
     }
