@@ -88,10 +88,15 @@ Python 是当前主要自动执行目标。MATLAB 配置由 `matlab_environment_
 
 薄平台入口帮助不同 coding agent 加载同一套工作流，而不是复制工作流：
 
+- `SKILL.md`：顶层 Agent Skill 兼容入口。
+- `.codex-plugin/plugin.json`：Codex plugin 元数据，用于 Skill 发现。
 - `.codex/INSTALL.md`：Codex 本地 Skill 安装说明。
+- `.claude-plugin/plugin.json`：Claude Code plugin 元数据和 session-start 指针。
+- `.cursor-plugin/plugin.json`：Cursor plugin 元数据和 session-start 指针。
 - `.opencode/INSTALL.md`：OpenCode 加载方式和插件壳说明。
 - `CLAUDE.md`：Claude Code 仓库级说明。
 - `GEMINI.md`：Gemini 入口，包含默认 workflow Skill 和 registry。
+- `hooks/`：轻量平台 hook，只注入入口提醒。
 
 所有入口都指回 `skills/registry.yaml` 和 `computational_math_reproduction_workflow_skill`。平台文件应保持短小，不应变成另一套 workflow 定义。
 

@@ -90,10 +90,15 @@ Python is the primary automatic execution target. MATLAB setup is handled by `ma
 
 Thin platform adapters help other coding agents load the same workflow without copying it:
 
+- `SKILL.md`: top-level Agent Skill compatibility entrypoint.
+- `.codex-plugin/plugin.json`: Codex plugin metadata for Skill discovery.
 - `.codex/INSTALL.md`: Codex local Skill installation notes.
+- `.claude-plugin/plugin.json`: Claude Code plugin metadata and session-start pointer.
+- `.cursor-plugin/plugin.json`: Cursor plugin metadata and session-start pointer.
 - `.opencode/INSTALL.md`: OpenCode loading and plugin-wrapper notes.
 - `CLAUDE.md`: Claude Code repository orientation.
 - `GEMINI.md`: Gemini entrypoint that includes the default workflow Skill and registry.
+- `hooks/`: lightweight platform hooks that inject only an entrypoint reminder.
 
 All adapters point back to `skills/registry.yaml` and `computational_math_reproduction_workflow_skill`. Platform files should stay small and should not become separate workflow definitions.
 
